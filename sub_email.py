@@ -77,6 +77,11 @@ class TeacherData:
     """
     return copy.deepcopy(self.dates)
 
+  def GetFirstName(self):
+    """Returns the first name of the teacher.
+    """
+    return self.name.split()[0].strip()
+
 class AllTeachersData(list):
   """Class to represnt information regarding teacher's name, email and sub date,
   from a given spread sheet of a giver user.
@@ -131,8 +136,9 @@ class SendReminder:
       potential_dates = SendReminder._GetPotentialDates(teacher_data.GetDates())
 
       if potential_dates:
-        SendReminder._SendEmail(teacher_data.name, teacher_data.email_id,
-                                potential_dates, user_name, password)
+        SendReminder._SendEmail(teacher_data.GetFirstName(),
+                                teacher_data.email_id, potential_dates,
+                                user_name, password)
 
   @staticmethod
   def _GetPotentialDates(dates):
@@ -147,7 +153,7 @@ class SendReminder:
     today = datetime.today()
     for a_date in dates:
       diff_days = (a_date - today).days
-      if diff_days > 0 and diff_days <= 7:
+      if diff_days >= 0 and diff_days <= 7:
         potential_dates.append(a_date)
 
     return sorted(potential_dates)
@@ -170,7 +176,7 @@ class SendReminder:
     msg['From'] = from_user
     msg['To'] = recipient_email
     msg['Cc'] = from_user
-    msg['Subject'] = ('Sub Reminder for the week of %s'
+    msg['Subject'] = ('Sub Reminder for the week of %s at SoniYoga'
                       % datetime.today().strftime('%dth %B'))
 
     datefmt_str = '%a, %dth %B at %I:%M %p'
@@ -187,10 +193,26 @@ class SendReminder:
         sys.exit(1)
 
     message = ('Namaste %s\n\nThis is just a reminder about your subs for the '
-               'coming week. You have signed up for the following classes'
+               'coming week. You have signed to teach the following classes'
                '.\n\n%s\n\nOm,\nSoniYoga' % (name, '\n'.join(yoga_classes)))
 
-    msg.attach(MIMEText(message))
+    html_message = ("""
+    <html>
+      <head></head>
+      <body>
+        <p>
+          Namaste %s,<br><br>
+          This is just a reminder about your subs for the
+          coming week. You have signed to teach the following
+          classes.<br><br>%s<br><br>
+          Om,<br>
+          <a href="https://clients.mindbodyonline.com/ASP/home.asp?studioid=2535">SoniYoga</a>
+        </p>
+      </body>
+    </html>
+    """ % (name, '<br>'.join(yoga_classes)))
+
+    msg.attach(MIMEText(html_message, 'html'))
 
     print 'Sending email to %s' % name
 
